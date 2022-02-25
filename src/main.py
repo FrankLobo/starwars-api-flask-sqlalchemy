@@ -9,6 +9,14 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User
+from models import db, UserFavoritesPlanets
+from models import db, UserFavoritesCharacters
+from models import db, UserFavoritesVehicles
+from models import db, UserFavoritesStarships
+from models import db, Planets
+from models import db, Characters
+from models import db, Vehicles
+from models import db, Starships
 #from models import Person
 
 app = Flask(__name__)
@@ -30,14 +38,35 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
-def handle_hello():
+# @app.route('/user', methods=['GET'])
+# def handle_hello():
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
+#     response_body = {
+#         "msg": "Hello, this is your GET /user response "
+#     }
 
-    return jsonify(response_body), 200
+#     return jsonify(response_body), 200
+
+# @app.route('/users', methods=['GET'])
+# def table_user():
+#     users = User.query.all()
+#     users = list(map(lambda user: user.serialize(), users))
+#     return jsonify(users), 200
+
+@app.route('/users', methods=['POST'])
+def create_user():
+    if request.method == 'POST':
+        user_name = request.json.get('user_name')
+        email = request.json.get('email')   
+
+        user= User()
+        user.user_name = user_name
+        user.email = email      
+
+        db.session.add(user)
+        db.session.commit()     
+        
+        return jsonify(user.serialize()), 201
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
