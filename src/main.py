@@ -9,14 +9,12 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User
-from models import db, UserFavoritesPlanets
-from models import db, UserFavoritesCharacters
-from models import db, UserFavoritesVehicles
-from models import db, UserFavoritesStarships
-from models import db, Planets
-from models import db, Characters
-from models import db, Vehicles
-from models import db, Starships
+from models import db, Character
+from models import db, Planet
+from models import db, Starship
+from models import db, UserFavoriteCharacter
+from models import db, UserFavoritePlanet
+from models import db, UserFavoriteStarship
 #from models import Person
 
 app = Flask(__name__)
@@ -53,11 +51,27 @@ def sitemap():
 #     users = list(map(lambda user: user.serialize(), users))
 #     return jsonify(users), 200
 
-@app.route('/users', methods=['POST', 'GET'])
+#------------------------------------------------------------ USER --------------------------------------------------------------#
+
+@app.route('/users', methods=['GET', 'POST'])
 def create_user():
+    
+    if request.method == 'GET':
+        users = User.query.all()
+        users = list(map(lambda user: user.serialize(), users))
+
+        return jsonify(users), 200
+
     if request.method == 'POST':
         user_name = request.json.get('user_name')
         email = request.json.get('email')
+        password = request.json.get('password')
+        is_active = request.json.get('is_active')
+        
+        if not user_name: return jsonify({"message": "user_name is required!"}), 400
+        if not email: return jsonify({"message": "email is required!"}), 400
+        if not password: return jsonify({"message": "password is required!"}), 400
+        if not is_active: return jsonify({"message": "is_active is required!"}), 400
            
         """
         body = request.get_json()
@@ -70,54 +84,24 @@ def create_user():
         user.user_name = user_name
         user.email = email  
         """
-        user = User(user_name=user_name, email=email)
+        user = User(user_name=user_name, email=email, password=password, is_active=True)
 
         db.session.add(user)
         db.session.commit()     
         
         return jsonify(user.serialize()), 201
 
-    else: 
-        users = User.query.all()
-        users = list(map(lambda user: user.serialize(), users))
+#------------------------------------------------------------ CHARACTERS --------------------------------------------------------------#
 
-        return jsonify(users), 200
-
-@app.route('/planets', methods=['POST', 'GET'])
-def create_planets():
-    if request.method == 'POST':
-        name = request.json.get('name')
-        population = request.json.get('population')
-        rotation_period = request.json.get('rotation_period')
-        orbital_period = request.json.get('orbital_period')
-        diameter = request.json.get('diameter')
-        gravity = request.json.get('gravity')
-        terrain = request.json.get('terrain')
-        climate = request.json.get('climate')
-        
-        planets = Planets()
-        Planets.name = name
-        Planets.population = population
-        Planets.rotation_period = rotation_period
-        Planets.orbital_period = orbital_period
-        Planets.diameter = diameter
-        Planets.gravity = gravity
-        Planets.terrain = terrain
-        Planets.climate = climate
-
-        db.session.add(planets)
-        db.session.commit()     
-        
-        return jsonify(planets.serialize()), 201
-
-    else: 
-        planets = Planets.query.all()
-        planets = list(map(lambda planet: planet.serialize(), planets))
-
-        return jsonify(planets), 200
-
-@app.route('/characters', methods=['POST', 'GET'])
+@app.route('/characters', methods=['GET', 'POST'])
 def create_characters():
+
+    if request.method == 'GET':
+        characters = Character.query.all()
+        characters = list(map(lambda character: character.serialize(), characters))
+
+        return jsonify(characters), 200
+
     if request.method == 'POST':
         name = request.json.get('name')
         birth = request.json.get('birth')
@@ -128,8 +112,18 @@ def create_characters():
         hair_color = request.json.get('hair_color')
         skin_color = request.json.get('skin_color')
         home_world = request.json.get('home_world')
+
+        if not name: return jsonify({"message": "name is required!"}), 400
+        if not birth: return jsonify({"message": "birth is required!"}), 400
+        if not species: return jsonify({"message": "species is required!"}), 400
+        if not height: return jsonify({"message": "height is required!"}), 400
+        if not mass: return jsonify({"message": "mass is required!"}), 400
+        if not gender: return jsonify({"message": "gender is required!"}), 400
+        if not hair_color: return jsonify({"message": "hair_color is required!"}), 400
+        if not skin_color: return jsonify({"message": "skin_color is required!"}), 400
+        if not home_world: return jsonify({"message": "home_world is required!"}), 400
            
-        characters = Characters()
+        characters = Character()
         characters.name = name
         characters.birth = birth
         characters.species = species
@@ -145,51 +139,74 @@ def create_characters():
         
         return jsonify(characters.serialize()), 201
 
-    else: 
-        characters = Characters.query.all()
-        characters = list(map(lambda character: character.serialize(), characters))
+@app.route('/characters/<int:characters_id>', methods=['GET'])
+def get_one_character(characters_id):
 
-        return jsonify(characters), 200
+    characters = Character.query.get(characters_id)
+    return jsonify(characters.serialize()), 200
 
-@app.route('/vehicles', methods=['POST', 'GET'])
-def create_vehicles():
+#------------------------------------------------------------ PLANETS --------------------------------------------------------------#
+
+@app.route('/planets', methods=['GET', 'POST'])
+def create_planets():
+
+    if request.method == 'GET':
+        planets = Planet.query.all()
+        planets = list(map(lambda planet: planet.serialize(), planets))
+
+        return jsonify(planets), 200
+
     if request.method == 'POST':
         name = request.json.get('name')
-        model = request.json.get('model')
-        manufacture = request.json.get('manufacture')
-        class_type = request.json.get('class_type')
-        speed = request.json.get('speed')
-        cost = request.json.get('cost')
-        lenght = request.json.get('lenght')
-        cargo_capacity = request.json.get('cargo_capacity')
-        minimum_crew = request.json.get('minimum_crew')
-        passenger = request.json.get('passenger')
+        population = request.json.get('population')
+        rotation_period = request.json.get('rotation_period')
+        orbital_period = request.json.get('orbital_period')
+        diameter = request.json.get('diameter')
+        gravity = request.json.get('gravity')
+        terrain = request.json.get('terrain')
+        climate = request.json.get('climate')
+
+        if not name: return jsonify({"message": "name is required!"}), 400
+        if not population: return jsonify({"message": "population is required!"}), 400
+        if not rotation_period: return jsonify({"message": "rotation_period is required!"}), 400
+        if not orbital_period: return jsonify({"message": "orbital_period is required!"}), 400
+        if not diameter: return jsonify({"message": "diameter is required!"}), 400
+        if not gravity: return jsonify({"message": "gravity is required!"}), 400
+        if not terrain: return jsonify({"message": "terrain is required!"}), 400
+        if not climate: return jsonify({"message": "climate is required!"}), 400
            
-        vehicles = Vehicles()
-        vehicles.name = name
-        vehicles.model = model
-        vehicles.manufacture = manufacture
-        vehicles.class_type = class_type
-        vehicles.speed = speed
-        vehicles.cost = cost
-        vehicles.lenght =lenght
-        vehicles.cargo_capacity = cargo_capacity
-        vehicles.minimum_crew = minimum_crew
-        vehicles.passanger = passanger
+        planets = Planet()
+        planets.name = name
+        planets.population = population
+        planets.rotation_period = rotation_period
+        planets.orbital_period = orbital_period
+        planets.diameter = diameter
+        planets.gravity = gravity
+        planets.terrain = terrain
+        planets.climate = climate
 
-        db.session.add(vehicles)
+        db.session.add(planets)
         db.session.commit()     
+        
+        return jsonify(planets.serialize()), 201
 
-        return jsonify(vehicles.serialize()), 201
+@app.route('/planets/<int:planets_id>', methods=['GET'])
+def get_one_planet(planets_id):
 
-    else: 
-        vehicles= Vehicles.query.all()
-        vehicles= list(map(lambda vehicle: vehicle.serialize(), vehicles))
+    planets = Planet.query.get(planets_id)
+    return jsonify(planets.serialize()), 200
 
-        return jsonify(vehicles), 200
+#------------------------------------------------------------ STARSHIPS --------------------------------------------------------------#
 
-@app.route('/starships', methods=['POST', 'GET'])
+@app.route('/starships', methods=['GET', 'POST'])
 def create_starships():
+
+    if request.method == 'GET':
+        starships = Starship.query.all()
+        starships = list(map(lambda starship: starship.serialize(), starships))
+
+        return jsonify(starships), 200
+
     if request.method == 'POST':
         name = request.json.get('name')
         model = request.json.get('model')
@@ -202,9 +219,22 @@ def create_starships():
         lenght = request.json.get('lenght')
         cargo_capacity = request.json.get('cargo_capacity')
         minimum_crew = request.json.get('minimum_crew')
-        passenger = request.json.get('passenger')
+        passanger = request.json.get('passanger')
+
+        if not name: return jsonify({"message": "name is required!"}), 400
+        if not model: return jsonify({"message": "model is required!"}), 400
+        if not manufacture: return jsonify({"message": "manufacture is required!"}), 400
+        if not class_type: return jsonify({"message": "class_type is required!"}), 400
+        if not speed: return jsonify({"message": "speed is required!"}), 400
+        if not hyperdrive_rating: return jsonify({"message": "hyperdrive_rating is required!"}), 400
+        if not mglt: return jsonify({"message": "mglt is required!"}), 400
+        if not cost: return jsonify({"message": "cost is required!"}), 400
+        if not lenght: return jsonify({"message": "lenght is required!"}), 400
+        if not cargo_capacity: return jsonify({"message": "cargo_capacity is required!"}), 400
+        if not minimum_crew: return jsonify({"message": "minimum_crew is required!"}), 400
+        if not passanger: return jsonify({"message": "passanger is required!"}), 400
            
-        starships = Starships()
+        starships = Starship()
         starships.name = name
         starships.model = model
         starships.manufacture = manufacture
@@ -213,7 +243,7 @@ def create_starships():
         starships.cost = cost
         starships.hyperdrive_rating = hyperdrive_rating
         starships.mglt = mglt
-        starships.lenght =lenght
+        starships.lenght = lenght
         starships.cargo_capacity = cargo_capacity
         starships.minimum_crew = minimum_crew
         starships.passanger = passanger
@@ -223,109 +253,128 @@ def create_starships():
         
         return jsonify(starships.serialize()), 201
 
-    else: 
-        starships= Starships.query.all()
-        starships= list(map(lambda starship: starship.serialize(), starships))
+@app.route('/starships/<int:starships_id>', methods=['GET'])
+def get_one_starship(starships_id):
 
-        return jsonify(starships), 200
+    starships = Starship.query.get(starships_id)
+    return jsonify(starships.serialize()), 200
 
-@app.route('/userfavoritesplanets', methods=['POST', 'GET'])
-def create_userfavoritesplanets():
+#------------------------------------------------------------ USER FAVORTIES --------------------------------------------------------------#
+
+@app.route('/user/favorites', methods=['GET'])
+def get_all_user_favorites():
+
+    users_favorites_characters = UserFavoriteCharacter.query.all()
+    users_favorites_characters = list(map(lambda x: x.serialize(), users_favorites_characters))
+
+    users_favorites_planets = UserFavoritePlanet.query.all()
+    users_favorites_planets = list(map(lambda x: x.serialize(), users_favorites_planets))
+
+    users_favorites_starships = UserFavoriteStarship.query.all()
+    users_favorites_starships = list(map(lambda x: x.serialize(), users_favorites_starships))
+
+    return jsonify(users_favorites_characters, users_favorites_planets, users_favorites_starships), 200
+
+
+#------------------------------------------------------------ USER FAVORTIES CHARACTERS  --------------------------------------------------------------#
+
+@app.route('/user/favorite/character/<int:characters_id>', methods=['GET', 'POST', 'DELETE'])
+def user_favorites_characters(characters_id = None):
+
+    if request.method == 'GET':
+        if characters_id is not None:
+            one_character = Character.query.get(characters_id)
+        return jsonify(one_character.serialize()), 200
+
     if request.method == 'POST':
-        user_id = request.json.get('user_id')
-        user = request.json.get('user')
-        planets_id = request.json.get('planets_id')
-        planets = request.json.get('planets')
-             
-        favorites_planets= UserFavoritesPlanets()
-        favorites_Planets.user = user
-        favorites_Planets.user_id = user_id
-        favorites_Planets.planets = planets
+        if characters_id is not None:
+            
+            user_id = request.json.get('user_id')
+            characters_id = request.json.get('characters_id')
+            
+            favorites_characters = UserFavoriteCharacter()
+            favorites_characters.user_id = user_id
+            favorites_characters.characters_id = characters_id
 
-        db.session.add(favorites_planets)
-        db.session.commit()     
-        
-        return jsonify(favorites_planets.serialize()), 201
+            db.session.add(favorites_characters)
+            db.session.commit()     
+            
+            return jsonify(favorites_characters.serialize()), 201
 
-    else: 
-        favorites_planets= UserFavoritesPlanets.query.all()
-        favorites_planets= list(map(lambda favorites_planets: favorites_planets.serialize(), favorites_planets))
+    if request.method == 'delete':
+        if characters_id is not None:
+            favorites_characters = UserFavoriteCharacter()
+            db.session.delete(favorites_characters)
+            db.session.commit()     
+            
+            return jsonify(favorites_characters.serialize()), 201
 
-        return jsonify(favorites_planets), 200
+#------------------------------------------------------------ USER FAVORTIES PLANETS --------------------------------------------------------------#
 
-@app.route('/userfavoritescharacters', methods=['POST', 'GET'])
-def create_userfavoritescharacters():
+@app.route('/user/favorite/planet/<int:planets_id>', methods=['GET', 'POST', 'DELETE'])
+def user_favorites_planets():
+      
+    if request.method == 'GET':
+        if planets_id is not None:
+            one_planet = Planet.query.get(planets_id)
+        return jsonify(one_planet.serialize()), 200
+
     if request.method == 'POST':
-        user_id = request.json.get('user_id')
-        user = request.json.get('user')
-        characters_id = request.json.get('characters_id')
-        characters = request.json.get('characters')
-           
-        favorites_characters= UserFavoritesCharacters()
-        favorites_characters.user = user
-        favorites_characters.user_id = user_id
-        favorites_characters.characters = characters
+        if planets_id is not None:
+            
+            user_id = request.json.get('user_id')
+            planets_id = request.json.get('planets_id')
+            
+            favorites_planets = UserFavoritePlanet()
+            favorites_Planets.user_id = user_id
+            favorites_Planets.planets_id = planets_id
 
-        db.session.add(favorites_characters)
-        db.session.commit()     
+            db.session.add(favorites_planets)
+            db.session.commit()     
         
-        return jsonify(favorites_characters.serialize()), 201
+            return jsonify(favorites_planets.serialize()), 201
 
-    else: 
-        favorites_characters= UserFavoritesPlanets.query.all()
-        favorites_characters= list(map(lambda favorites_characters: favorites_characters.serialize(), favorites_characters))
+    if request.method == 'delete':
+        if planets_id is not None:
+            favorites_planets = UserFavoritePlanet()
+            db.session.delete(favorites_planets)
+            db.session.commit()     
+            
+            return jsonify(favorites_planets.serialize()), 201
 
-        return jsonify(favorites_characters), 200
+#------------------------------------------------------------ USER FAVORTIES STARSHIPS  --------------------------------------------------------------#
 
-@app.route('/userfavoritesvehicles', methods=['POST', 'GET'])
-def create_userfavoritesvehicles():
+@app.route('/user/favorite/starship/<int:starships_id>', methods=['GET', 'POST', 'DELETE'])
+def user_favorites_starships(starships_id):
+
+    if request.method == 'GET':
+        if starships_id is not None:
+            one_starship = Starship.query.get(starships_id)
+        return jsonify(one_starship.serialize()), 200
+
+
     if request.method == 'POST':
-        user_id = request.json.get('user_id')
-        user = request.json.get('user')
-        vehicles_id = request.json.get('vehicles_id')
-        vehicles = request.json.get('vehicles')
+        if starships_id is not None:
+            
+            user_id = request.json.get('user_id')
+            starships_id = request.json.get('starships_id')
+            
+            favorites_starships = UserFavoriteStarship()
+            favorites_starships.user_id = user_id
+            favorites_starships.starships_id = starships_id
 
-        favorites_vehicles= UserFavoritesVehicles()
-        favorites_vehicles.user = user
-        favorites_vehicles.user_id = user_id
-        favorites_vehicles.vehicles = vehicles
-
-
-        db.session.add(favorites_vehicles)
-        db.session.commit()     
+            db.session.add(favorites_starships)
+            db.session.commit()     
         
-        return jsonify(favorites_vehicles.serialize()), 201
+            return jsonify(favorites_starships.serialize()), 201
 
-    else: 
-        favorites_vehicles= UserFavoritesVehicles.query.all()
-        favorites_vehicles= list(map(lambda favorites_vehicles: favorites_vehicles.serialize(), favorites_vehicles))
-
-        return jsonify(favorites_vehicles), 200
-
-@app.route('/userfavoritesstarships', methods=['POST', 'GET'])
-def create_userfavoritesstarships():
-    if request.method == 'POST':
-        user_id = request.json.get('user_id')
-        user = request.json.get('user')
-        starships_id = request.json.get('starships_id')
-        starships = request.json.get('starships')
-
-        favorites_starships= UserFavoritesStarships()
-        favorites_starships.user = user
-        favorites_starships.user_id = user_id
-        favorites_starships.starships = starships
-
-
-        db.session.add(favorites_starships)
-        db.session.commit()     
-        
-        return jsonify(favorites_starships.serialize()), 201
-
-    else: 
-        favorites_starships= UserFavoritesStarships.query.all()
-        favorites_starships= list(map(lambda favorites_starships: favorites_starships.serialize(), favorites_starships))
-
-        return jsonify(favorites_starships), 200
+    if request.method == 'delete':
+        if starships_id is not None:
+            favorites_starships = UserFavoritePlanet()
+            db.session.delete(favorites_starships)
+            db.session.commit()     
+            
+            return jsonify(favorites_starships.serialize()), 201
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
