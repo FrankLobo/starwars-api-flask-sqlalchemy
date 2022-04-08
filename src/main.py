@@ -261,37 +261,29 @@ def get_one_starship(starships_id):
 
 #------------------------------------------------------------ USER FAVORTIES --------------------------------------------------------------#
 
-@app.route('/user/favorites', methods=['GET'])
-def get_all_user_favorites():
+@app.route('/user/<int:user_id>/favorites', methods=['GET'])
+def get_all_user_favorites(user_id):
+    if user_id is not None:
+        usersID = User.query.get(user_id)
+        users_favorites_characters = UserFavoriteCharacter.query.all()
+        users_favorites_characters = list(map(lambda x: x.serialize(), users_favorites_characters))
 
-    users_favorites_characters = UserFavoriteCharacter.query.all()
-    users_favorites_characters = list(map(lambda x: x.serialize(), users_favorites_characters))
+        users_favorites_planets = UserFavoritePlanet.query.all()
+        users_favorites_planets = list(map(lambda x: x.serialize(), users_favorites_planets))
 
-    users_favorites_planets = UserFavoritePlanet.query.all()
-    users_favorites_planets = list(map(lambda x: x.serialize(), users_favorites_planets))
+        users_favorites_starships = UserFavoriteStarship.query.all()
+        users_favorites_starships = list(map(lambda x: x.serialize(), users_favorites_starships))
 
-    users_favorites_starships = UserFavoriteStarship.query.all()
-    users_favorites_starships = list(map(lambda x: x.serialize(), users_favorites_starships))
-
-    return jsonify(users_favorites_characters, users_favorites_planets, users_favorites_starships), 200
+        return jsonify(users_favorites_characters, users_favorites_planets, users_favorites_starships), 200
 
 
 #------------------------------------------------------------ USER FAVORTIES CHARACTERS  --------------------------------------------------------------#
 
-@app.route('/user/favorite/character/<int:characters_id>', methods=['GET', 'POST', 'DELETE'])
-def user_favorites_characters(characters_id = None):
-
-    if request.method == 'GET':
-        if characters_id is not None:
-            one_character = Character.query.get(characters_id)
-        return jsonify(one_character.serialize()), 200
+@app.route('/user/<int:user_id>/favorite/character/<int:characters_id>', methods=['POST', 'DELETE'])
+def user_favorites_characters(user_id, characters_id):
 
     if request.method == 'POST':
-        if characters_id is not None:
-            
-            user_id = request.json.get('user_id')
-            characters_id = request.json.get('characters_id')
-            
+        if user_id is not None and characters_id is not None:
             favorites_characters = UserFavoriteCharacter()
             favorites_characters.user_id = user_id
             favorites_characters.characters_id = characters_id
@@ -301,64 +293,45 @@ def user_favorites_characters(characters_id = None):
             
             return jsonify(favorites_characters.serialize()), 201
 
-    if request.method == 'delete':
-        if characters_id is not None:
+    if request.method == 'DELETE':
+        if user_id is not None and characters_id is not None:
             favorites_characters = UserFavoriteCharacter()
             db.session.delete(favorites_characters)
             db.session.commit()     
             
-            return jsonify(favorites_characters.serialize()), 201
+            return jsonify(favorites_characters.serialize()), 200
 
 #------------------------------------------------------------ USER FAVORTIES PLANETS --------------------------------------------------------------#
 
-@app.route('/user/favorite/planet/<int:planets_id>', methods=['GET', 'POST', 'DELETE'])
-def user_favorites_planets():
+@app.route('/user/<int:user_id>/favorite/planet/<int:planets_id>', methods=['POST', 'DELETE'])
+def user_favorites_planets(user_id, planets_id):
       
-    if request.method == 'GET':
-        if planets_id is not None:
-            one_planet = Planet.query.get(planets_id)
-        return jsonify(one_planet.serialize()), 200
-
     if request.method == 'POST':
         if planets_id is not None:
-            
-            user_id = request.json.get('user_id')
-            planets_id = request.json.get('planets_id')
-            
             favorites_planets = UserFavoritePlanet()
-            favorites_Planets.user_id = user_id
-            favorites_Planets.planets_id = planets_id
+            favorites_planets.user_id = user_id
+            favorites_planets.planets_id = planets_id
 
             db.session.add(favorites_planets)
             db.session.commit()     
         
             return jsonify(favorites_planets.serialize()), 201
 
-    if request.method == 'delete':
+    if request.method == 'DELETE':
         if planets_id is not None:
             favorites_planets = UserFavoritePlanet()
             db.session.delete(favorites_planets)
             db.session.commit()     
             
-            return jsonify(favorites_planets.serialize()), 201
+            return jsonify(favorites_planets.serialize()), 200
 
 #------------------------------------------------------------ USER FAVORTIES STARSHIPS  --------------------------------------------------------------#
 
-@app.route('/user/favorite/starship/<int:starships_id>', methods=['GET', 'POST', 'DELETE'])
-def user_favorites_starships(starships_id):
-
-    if request.method == 'GET':
-        if starships_id is not None:
-            one_starship = Starship.query.get(starships_id)
-        return jsonify(one_starship.serialize()), 200
-
+@app.route('/user/<int:user_id>/favorite/starship/<int:starships_id>', methods=['POST', 'DELETE'])
+def user_favorites_starships(user_id, starships_id):
 
     if request.method == 'POST':
         if starships_id is not None:
-            
-            user_id = request.json.get('user_id')
-            starships_id = request.json.get('starships_id')
-            
             favorites_starships = UserFavoriteStarship()
             favorites_starships.user_id = user_id
             favorites_starships.starships_id = starships_id
@@ -368,13 +341,13 @@ def user_favorites_starships(starships_id):
         
             return jsonify(favorites_starships.serialize()), 201
 
-    if request.method == 'delete':
+    if request.method == 'DELETE':
         if starships_id is not None:
             favorites_starships = UserFavoritePlanet()
             db.session.delete(favorites_starships)
             db.session.commit()     
             
-            return jsonify(favorites_starships.serialize()), 201
+            return jsonify(favorites_starships.serialize()), 200
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
